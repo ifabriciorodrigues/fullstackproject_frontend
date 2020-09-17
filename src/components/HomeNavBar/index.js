@@ -40,6 +40,11 @@ const NavBar = () => {
         history.push("/register/song")
     }
 
+    const goToPlaylistPage = () => {
+        history.push("/playlists")
+    }
+
+
     const goToHomePage = () => {
       history.push("/");
     };
@@ -54,7 +59,7 @@ const NavBar = () => {
             <AddSong onClick={goToRegisterMusicPage} />
           </>
           <>
-            <PlaylistIcon />
+            <PlaylistIcon onClick={goToPlaylistPage} />
           </>
           <>
             <AccountIcon />
