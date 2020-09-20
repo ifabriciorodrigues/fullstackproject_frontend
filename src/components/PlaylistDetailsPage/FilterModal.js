@@ -10,7 +10,7 @@ import {
   ModalButton,
   ModalElement,
   ModalTitle,
-} from "./songModalStyle";
+} from "./filterModalStyle";
 
 import Modal from "@material-ui/core/Modal";
 

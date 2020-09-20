@@ -14,12 +14,21 @@ import HomeNavbar from "../HomeNavBar";
 import SuccessMessage from "./SuccessMessage"
 import ErrorMessage from "./ErrorMessage";
 
-const baseUrl = "http://localhost:3000";
+import {
+  MainContainer,
+  SignUpContainer,
+  SignUpWrapper,
+  LoginRouterContainer,
+  HeaderText,
+  InputContainer,
+} from "./styles";
+
+const baseUrl = "http://ec2-34-204-93-195.compute-1.amazonaws.com:3000";
+
 
 const RegisterSongPage = () => {
   const [title, setTitle] = useState("");
   const [token, setToken] = useState(null);
-  const [tokenVerifier, setTokenVerifier] = useState(0);
   const [author, setAuthor] = useState("");
   const [userAsAuthor, setUserAsAuthor] = useState("");
   const [userInfo, setUserInfo] = useState("");
@@ -30,7 +39,7 @@ const RegisterSongPage = () => {
   const [album, setAlbum] = useState("");
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [message, setMessage] = useState("");
   const [isUserAuthor, setIsUserAuthor] = useState({
     checkedA: false,
     checkedB: false,
@@ -39,23 +48,19 @@ const RegisterSongPage = () => {
   const history = useHistory();
 
   useEffect(() => {
-    const receivedToken = window.localStorage.getItem("token");
-    setToken(receivedToken);
-    getUserInfo();
+    const token = window.localStorage.getItem("token");
+    setToken(token);
 
-    if (isUserAuthor.checkedA === true) {
+    if(isUserAuthor.checkedA === true) {
       setUserAsAuthor(userInfo.name);
     }
 
-    if (token === null) {
-      let counter = 0;
-      setTokenVerifier(counter++);
-    }
-
-    if (tokenVerifier === 3) {
-      history.push("/");
-    }
-  }, [author, token, userInfo, tokenVerifier, isUserAuthor, history]);
+   if (!token) {
+     history.push("/login");
+   } else {
+     getUserInfo();
+   }
+ }, [token, isUserAuthor]);
 
   const getUserInfo = async () => {
     const axiosConfig = {
@@ -66,7 +71,7 @@ const RegisterSongPage = () => {
 
     try {
       const response = await axios.get(
-        "http://localhost:3000/user/get",
+        `${baseUrl}/user/get`,
         axiosConfig
       );
       setUserInfo(response.data.user);
@@ -78,7 +83,6 @@ const RegisterSongPage = () => {
   // CÓDIGO NOVO DO FILE MANAGER
   const onChangeHandler = (event) => {
     console.log(event.target.files[0]);
-    setFile(event.target.files[0]);
     const newFileName = Date.now().toString();
     setFileName(newFileName)
   };
@@ -93,7 +97,7 @@ const RegisterSongPage = () => {
   const handleUploadFile = (data) => {
 
     axios
-      .post(`http://localhost:8000/upload/${fileName}`, data, {
+      .post(`${baseUrl}/upload/${fileName}`, data, {
         // receive two parameter endpoint url ,form data
       })
       .then((res) => {
@@ -116,14 +120,16 @@ const RegisterSongPage = () => {
       title: title,
       author: author,
       date: date,
-      file: fileName,
+      file: file,
       genre: genre,
       album: album,
     };
 
+    console.log(body);
+
     try {
       const response = await axios.post(
-        `http://localhost:3000/music/register`,
+        `${baseUrl}/music/register`,
         body,
         axiosConfig
       );
@@ -134,10 +140,11 @@ const RegisterSongPage = () => {
       setGenre("");
       setAlbum("");
       setSuccess(true);
+      setMessage("Song added successfully!")
     } catch (err) {
       setError(true);
-      setErrorMessage(
-        "Falha no registro da música! Por favor, tente novamente.\n " + err
+      setMessage(
+        "Failure upon adding a song, try again."
       );
       console.log(err);
     }
@@ -154,287 +161,203 @@ const RegisterSongPage = () => {
   return (
     <div>
       <HomeNavbar />
-      {success ? (
+      {success && (
         <div onClick={() => setSuccess(false)}>
-          <SuccessMessage />
+          <SuccessMessage successMessage={message} />
         </div>
-      ) : (
-        <></>
       )}
-      {error ? (
+      {error && (
         <div onClick={() => setError(false)}>
-          <ErrorMessage errorMessage={errorMessage} />
+          <ErrorMessage errorMessage={message} />
         </div>
-      ) : (
-        <></>
       )}
-      <React.Fragment>
+      <MainContainer>
         <CssBaseline />
-        <div style={{ backgroundColor: "#f2f7fd", height: "110vh" }}>
-          <Container
-            maxWidth="sm"
-            style={{ width: "90vw", paddingTop: "48px" }}
-          >
-            <Typography
-              component="div"
+        <Container maxWidth="sm">
+          <SignUpContainer>
+            <HeaderText>Adicionar nova música</HeaderText>
+            <SignUpWrapper>
+              <InputContainer>
+                <label htmlFor="title">Título</label>
+                <TextField
+                  inputlabelprops={{
+                    shrink: true,
+                  }}
+                  variant="outlined"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  id="title"
+                  type="text"
+                  required
+                  fullWidth
+                />
+              </InputContainer>
+              <InputContainer>
+                <label htmlFor="author">Autor</label>
+                {isUserAuthor.checkedA === false ? (
+                  <>
+                    <TextField
+                      inputlabelprops={{
+                        shrink: true,
+                      }}
+                      variant="outlined"
+                      value={author}
+                      onChange={(e) => setAuthor(e.target.value)}
+                      id="author"
+                      type="text"
+                      required
+                      fullWidth
+                    />
+                  </>
+                ) : (
+                  <>
+                    <TextField
+                      inputlabelprops={{
+                        shrink: true,
+                      }}
+                      variant="outlined"
+                      value={userAsAuthor}
+                      onChange={(e) => setAuthor(e.target.value)}
+                      id="author"
+                      type="text"
+                      required
+                      fullWidth
+                    />
+                  </>
+                )}
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={isUserAuthor.checkedA}
+                      style={{ color: "#116dee" }}
+                      onChange={handleChange}
+                      name="checkedA"
+                    />
+                  }
+                  label="Eu sou o autor"
+                />
+              </InputContainer>
+              <InputContainer>
+                <label htmlFor="date">Data de lançamento</label>
+                <TextField
+                  inputlabelprops={{
+                    shrink: true,
+                  }}
+                  variant="outlined"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  id="date"
+                  type="date"
+                  required
+                  fullWidth
+                />
+              </InputContainer>
+              <InputContainer>
+                <label htmlFor="file">Arquivo ou URL no YouTube</label>
+                {isUserAuthor.checkedB === false ? (
+                  <>
+                    <TextField
+                      inputlabelprops={{
+                        shrink: true,
+                      }}
+                      variant="outlined"
+                      onChange={onChangeHandler}
+                      id="file"
+                      type="file"
+                      required
+                      fullWidth
+                    />
+
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={isUserAuthor.checkedB}
+                          style={{ color: "#116dee" }}
+                          onChange={handleChange}
+                          name="checkedB"
+                        />
+                      }
+                      label="URL"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <TextField
+                      inputlabelprops={{
+                        shrink: true,
+                      }}
+                      variant="outlined"
+                      value={file}
+                      onChange={(e) => setFile(e.target.value)}
+                      id="url"
+                      type="text"
+                      required
+                      fullWidth
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={isUserAuthor.checkedB}
+                          style={{ color: "#116dee" }}
+                          onChange={handleChange}
+                          name="checkedB"
+                        />
+                      }
+                      label="URL"
+                    />
+                  </>
+                )}
+              </InputContainer>
+              <InputContainer>
+                <label htmlFor="genre">Gêneros</label>
+                <TextField
+                  inputlabelprops={{
+                    shrink: true,
+                  }}
+                  variant="outlined"
+                  value={genre}
+                  onChange={(e) => setGenre(e.target.value)}
+                  id="genre"
+                  type="text"
+                  required
+                  fullWidth
+                />
+              </InputContainer>
+              <InputContainer>
+                <label htmlFor="album">Álbum</label>
+                <TextField
+                  inputlabelprops={{
+                    shrink: true,
+                  }}
+                  variant="outlined"
+                  value={album}
+                  onChange={(e) => setAlbum(e.target.value)}
+                  id="album"
+                  type="text"
+                  required
+                  fullWidth
+                />
+              </InputContainer>
+            </SignUpWrapper>
+            <Button
+              variant="contained"
+              size="large"
               style={{
-                backgroundColor: "#FFF",
-                height: "100vh",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                alignItems: "center",
-                overflow: "hidden",
-                boxSizing: "border-box",
-                padding: 0,
-                borderRadius: 10,
-                boxShadow: "0 0 1.25rem 0 rgba(0,0,0,0.3)",
+                backgroundColor: "#116dee",
+                color: "#FFF",
+                fontWeight: "bold",
+                width: "40%",
+                borderRadius: 30,
               }}
+              onClick={handleAddNewSong}
             >
-              <Typography
-                component="div"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                <Typography
-                  variant="h4"
-                  component="h1"
-                  style={{ marginTop: 16 }}
-                >
-                  Adicionar nova música
-                </Typography>
-              </Typography>
-              <Typography
-                component="div"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  width: "80%",
-                  height: "60%",
-                  justifyContent: "space-evenly",
-                }}
-              >
-                <Typography
-                  component="div"
-                  style={{ display: "flex", flexDirection: "column" }}
-                >
-                  <label htmlFor="title">Título</label>
-                  <TextField
-                    inputlabelprops={{
-                      shrink: true,
-                    }}
-                    variant="outlined"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    id="title"
-                    type="text"
-                    required
-                    fullWidth
-                  />
-                </Typography>
-
-                <Typography
-                  component="div"
-                  style={{ display: "flex", flexDirection: "column" }}
-                >
-                  <label htmlFor="author">Autor</label>
-                  {isUserAuthor.checkedA === false ? (
-                    <>
-                      <TextField
-                        inputlabelprops={{
-                          shrink: true,
-                        }}
-                        variant="outlined"
-                        value={author}
-                        onChange={(e) => setAuthor(e.target.value)}
-                        id="author"
-                        type="text"
-                        required
-                        fullWidth
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <TextField
-                        inputlabelprops={{
-                          shrink: true,
-                        }}
-                        variant="outlined"
-                        value={userAsAuthor}
-                        onChange={(e) => setAuthor(e.target.value)}
-                        id="author"
-                        type="text"
-                        required
-                        fullWidth
-                      />
-                    </>
-                  )}
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={isUserAuthor.checkedA}
-                        style={{ color: "#116dee" }}
-                        onChange={handleChange}
-                        name="checkedA"
-                      />
-                    }
-                    label="Eu sou o autor"
-                  />
-                </Typography>
-
-                <Typography
-                  component="div"
-                  style={{ display: "flex", flexDirection: "column" }}
-                >
-                  <label htmlFor="date">Data de lançamento</label>
-                  <TextField
-                    inputlabelprops={{
-                      shrink: true,
-                    }}
-                    variant="outlined"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    id="date"
-                    type="date"
-                    required
-                    fullWidth
-                  />
-                </Typography>
-
-                <Typography
-                  component="div"
-                  style={{ display: "flex", flexDirection: "column" }}
-                >
-                  <label htmlFor="file">Arquivo ou URL no YouTube</label>
-                  {isUserAuthor.checkedB === false ? (
-                    <>
-                      <TextField
-                        inputlabelprops={{
-                          shrink: true,
-                        }}
-                        variant="outlined"
-                        onChange={onChangeHandler}
-                        id="file"
-                        type="file"
-                        required
-                        fullWidth
-                      />
-
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={isUserAuthor.checkedB}
-                            style={{ color: "#116dee" }}
-                            onChange={handleChange}
-                            name="checkedB"
-                          />
-                        }
-                        label="URL"
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <TextField
-                        inputlabelprops={{
-                          shrink: true,
-                        }}
-                        variant="outlined"
-                        value={file}
-                        onChange={(e) => setFile(e.target.value)}
-                        id="url"
-                        type="text"
-                        required
-                        fullWidth
-                      />
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={isUserAuthor.checkedB}
-                            style={{ color: "#116dee" }}
-                            onChange={handleChange}
-                            name="checkedB"
-                          />
-                        }
-                        label="URL"
-                      />
-                    </>
-                  )}
-                </Typography>
-
-                <Typography
-                  component="div"
-                  style={{ display: "flex", flexDirection: "column" }}
-                >
-                  <label htmlFor="genre">Gêneros</label>
-                  <TextField
-                    inputlabelprops={{
-                      shrink: true,
-                    }}
-                    variant="outlined"
-                    value={genre}
-                    onChange={(e) => setGenre(e.target.value)}
-                    id="genre"
-                    type="text"
-                    required
-                    fullWidth
-                  />
-                </Typography>
-
-                <Typography
-                  component="div"
-                  style={{ display: "flex", flexDirection: "column" }}
-                >
-                  <label htmlFor="album">Álbum</label>
-                  <TextField
-                    inputlabelprops={{
-                      shrink: true,
-                    }}
-                    variant="outlined"
-                    value={album}
-                    onChange={(e) => setAlbum(e.target.value)}
-                    id="album"
-                    type="text"
-                    required
-                    fullWidth
-                  />
-                </Typography>
-              </Typography>
-
-              <Button
-                variant="contained"
-                size="large"
-                style={{
-                  backgroundColor: "#116dee",
-                  color: "#FFF",
-                  fontWeight: "bold",
-                  width: "40%",
-                  borderRadius: 30,
-                }}
-                onClick={handleAddNewSong}
-              >
-                Adicionar
-              </Button>
-              <Typography
-                component="div"
-                style={{
-                  backgroundColor: "#f2f7fd",
-                  height: 64,
-                  width: "100%",
-                  display: "flex",
-                  justifyContent: "space-around",
-                  alignItems: "center",
-                  overflow: "hidden",
-                  boxSizing: "border-box",
-                  boxShadow: "0 0 1.25rem 0 rgba(0,0,0,0.3)",
-                }}
-              ></Typography>
-            </Typography>
-          </Container>
-        </div>
-      </React.Fragment>
+              Adicionar
+            </Button>
+            <LoginRouterContainer>
+            </LoginRouterContainer>
+          </SignUpContainer>
+        </Container>
+      </MainContainer>
     </div>
   );
 };

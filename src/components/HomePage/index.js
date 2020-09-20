@@ -1,98 +1,90 @@
 import React, { useState, useEffect } from 'react';
-import FilterModal from "./FilterModal";
-import SongModal from "./SongModal";
+import {useHistory } from "react-router-dom"
+import FilterModal from "./filterModal";
+import SongModal from "./SongModal/";
 import FloatingMusicPlayer from "./FloatingMusicPlayer"
 import HomeNavBar from "../HomeNavBar";
+import SuccessMessage from "./SuccessMessage"
+import ErrorMessage from "./ErrorMessage"
 
 import PlayIcon from "@material-ui/icons/PlayArrow"
 import PauseIcon from "@material-ui/icons/Pause";
-import VolumeUpIcon from "@material-ui/icons/VolumeUp"
-import VolumeDownIcon from "@material-ui/icons/VolumeDown";
+import DeleteIcon from "@material-ui/icons/Delete"
+
 import Typography from "@material-ui/core/Typography";
 import Button from "@material-ui/core/Button";
+import CircularProgress from "@material-ui/core/CircularProgress";
 
 import axios from "axios"
 import styled from "styled-components";
-
 import ReactPlayer from "react-player";
 import ReactAudioPlayer from "react-audio-player";
 
-const MainContainer = styled.div`
-  width: 100%;
-  padding-bottom: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  flex-direction: column;
-  background-color: #f2f7fd;
-`;
+import { Main, MainContainer, LoadingScreen, HeaderWrapper, MusicHeader, HiddenYouTubePlayer, MusicTitle, MusicArtist, ViewMore, IconsWrapper} from "./styles"
 
-const HeaderWrapper = styled.div`
-  margin-top: 24px;
-  margin-bottom: 24px;
-  width: 50%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
 
-const MusicHeader = styled.div`
-  background-color: #FFF;
-  margin-bottom: 16px;
-  width: 50%;
-  height: 20%;
-  box-shadow: 0 0 1.25rem 0 rgba(0,0,0,0.3);
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  cursor: pointer;
-`;
-
-const HiddenYouTubePlayer = styled.div`
-  display: none;
-  width: 0;
-  height: 0;
-`
-
-const MusicTitle = styled.p`
-  width: 25%;
-`
-
-const ViewMore = styled.p`
-  width: 25%;
-  text-decoration: underline;
-`;
-
-const MusicArtist = styled.p`
-  width: 25%;
-`;
-
+const baseUrl = "http://ec2-34-204-93-195.compute-1.amazonaws.com:3000";
 
 const HomePage = () => {
     const [songs, setSongs] = useState([])
+    const [renderUserSongs, setRenderUserSongs] = useState(false);
+    const [refresh, setRefresh] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [token, setToken] = useState(null);
     const [songModal, setSongModal] = useState(false);
-    const [renderedList, setRenderedList] = useState(false);
+    const [userInfo, setUserInfo] = useState("")
     const [filterModal, setFilterModal] = useState(false);
     const [selectedSong, setSelectedSong] = useState("");
     const [currentPlayingSong, setCurrentPlayingSong] = useState("");
-    const [currentPlayingFile, setCurrentPlayingFile] = useState("");
+    const [currentPlayingVideo, setCurrentPlayingVideo] = useState("");
     const [currentVolume, setCurrentVolume] = useState(0.5)
     const [progress, setProgress] = useState(0);
     const [currentPausedSong, setCurrentPausedSong] = useState("");
     const [isPlaying, setIsPlaying] = useState(false);
-
     const [orderBy, setOrderBy] = useState("");
     const [musicGenre, setMusicGenre] = useState("");
+    const [success, setSuccess] = useState(false);
+    const [error, setError] = useState(false);
+    const [message, setMessage] = useState("");
+    const [headerMessage, setHeaderMessage] = useState("Todas as músicas em ordem ascendente")
+    const [playlists, setPlaylists] = useState([]);
+    const history = useHistory();
 
-  useEffect(() => {
-    getSongs();
-    const receivedToken = window.localStorage.getItem("token");
-    setToken(receivedToken);
+    useEffect(() => {
+      const token = window.localStorage.getItem("token");
+      setToken(token);
+      if (!token) {
+        history.push("/login");
+      } else {
+        getUserInfo();
+        getPlaylists();
 
-    if (token !== null) {
+        if (renderUserSongs && refresh) {
+          getUserSongs();
+        } else if (!renderUserSongs) {
+          getSongs();
+        }
+      }
+    }, [token, songs, renderUserSongs, refresh]);
+
+
+    const axiosConfig = {
+      headers: {
+        auth: token,
+      },
+    };
+
+  const getUserInfo = async () => {
+    try {
+      const response = await axios.get(
+        `${baseUrl}/user/get`,
+        axiosConfig
+      );
+      setUserInfo(response.data.user);
+    } catch (err) {
+      console.log(err.response.data);
     }
-  }, [songs, token, musicGenre, orderBy]);
+  };
 
   const handleSongModal = (song) => {
     setSongModal(true);
@@ -104,144 +96,241 @@ const HomePage = () => {
   };
 
   const handleMusicPlayer = (song) => {
-    setIsPlaying(!isPlaying); 
-    if (!isPlaying) {
-      setCurrentPausedSong(song);
-    } else if (isPlaying) {
-      setCurrentPausedSong("");
+    if (song.file.includes("youtu")) {
+      setCurrentPlayingSong("");
+      setCurrentPlayingVideo(song);
+        if (currentPlayingVideo === song) {
+          setIsPlaying(false);
+        } 
+        if (currentPlayingVideo !== song) {
+          setIsPlaying(true);
+        } 
     }
-
-    if(song.file !== currentPlayingSong.file) {
-      setCurrentPlayingSong("")
-    }
-
-    if(song.file.includes("youtu")) {
+    if (song.file.includes("mp3")) {
+      setCurrentPlayingVideo("");
       setCurrentPlayingSong(song);
-    } else {
-      const newSongFile = `http://30a23c945efd.ngrok.io/${song.file}.mp3`;
-      song.file = newSongFile;
-      setCurrentPlayingSong(song)
+      if (currentPlayingSong === song) {
+        setIsPlaying(false);
+      }
+      if (currentPlayingSong !== song) {
+        setIsPlaying(true);
+      }
     }
+      if (!isPlaying) {
+        setCurrentPausedSong(song.title);
+      } else if (isPlaying) {
+        setCurrentPausedSong("");
+      }
+
   }
 
   const handleSongVolume = (volume) => {
-    if(currentVolume <= 0.9) {
-      if (volume === "up") {
-        let newVolume = currentVolume + 0.1;
-        setCurrentVolume(newVolume);
-      }
-    } 
-    if (currentVolume >= 0.1) {
-      if (volume === "down") {
-        let newVolume = currentVolume - 0.1;
-        setCurrentVolume(newVolume);
-      }
-
-    }
-          
+    setCurrentVolume(volume)  
   }
 
-    const getSongs = async() => {
-      try {
-        const response = await axios.get(
-          `http://localhost:3000/music/get-all?musicGenre=${musicGenre}&orderType=${orderBy}`
-        )
-        setSongs(response.data.songs)
-      } catch (err) {
-        console.log(err)
-      }
+  const getUserSongs = async () => {
+    try {
+      const response = await axios.get(
+        `${baseUrl}/music/get/`,
+        axiosConfig
+      );
+      setSongs(response.data.retrievedMusic);
+    } catch (err) {
+      console.log(err.response.data);
     }
+  };
+
+  const getSongs = async () => {
+    try {
+      const response = await axios.get(
+        `${baseUrl}/music/get-all?musicGenre=${musicGenre}&orderType=${orderBy}`
+      );
+      setSongs(response.data.songs);
+    } catch (err) {
+      console.log(err.response.data);
+    }
+  };
+
+    const getPlaylists = async () => {
+      try {
+        const response = await axios.get(`${baseUrl}/playlist/`, axiosConfig);
+        setPlaylists(response.data.playlists);
+      } catch (err) {
+        console.log(err.response.data);
+      }
+    };
+
+    const deleteSongById = async(song) => {
+      if (window.confirm(`Are you sure you want to delete the song: '${song.title}'?`)) {
+        try {
+          await axios.delete(
+            `${baseUrl}/music/delete/${song.id}`, axiosConfig
+          );
+          setSuccess(true);
+          setMessage(`The song '${song.title}' was deleted successfully!`)
+          setTimeout(() => {
+            setSuccess(false);
+          }, 5000)
+        } catch (err) {
+          setError(true)
+          setMessage(`Failure upon deleting the song '${song.title}'. Try again.`);
+          console.log(err);
+        }
+      }
+    };
 
     const handleProgress = (progress) => {
-    console.log('onProgress', progress);
     setProgress(progress.playedSeconds.toFixed());
   }
 
-  const setURLQuery = (genre, order) => {
+  const setURLQuery = (genre, order, userSongs) => {
     setOrderBy(order);
     setMusicGenre(genre);
-    console.log("MUDEI")
-    console.log("NOVO GÊNERO", genre)
-    console.log("NOVA ORDEM", order)
+    setRenderUserSongs(userSongs);
+
+    if (userSongs) {
+      setHeaderMessage("Suas músicas em ordem ascendente");
+    } 
+    if (userSongs && order === "DESC") {
+      setHeaderMessage("Suas músicas em ordem decrescente");
+    } 
+    if (!userSongs && order === "ASC") {
+      setHeaderMessage("Todas as músicas em ordem ascendente");
+    } 
+    if (!userSongs && order === "DESC") {
+      setHeaderMessage("Todas as músicas em ordem decrescente");
+    }
+    if (genre.length > 1) {
+      setHeaderMessage(`Todas as músicas por gênero '${genre}' em ordem ascendente`)
+    }
+
+    setRefresh(!refresh) 
+    setIsLoading(true) 
+    setTimeout(() => {
+      setIsLoading(false)
+    }, 1500)
+    setTimeout(() => {
+      setRefresh(false)
+    }, 10000)
+
   }
 
     return (
-      <>
+      <Main>
         <HomeNavBar />
-        {currentPlayingSong !== "" ? (
-          <FloatingMusicPlayer
-            song={currentPlayingSong}
-            volume={currentVolume}
-            progress={progress}
-          />
+        {currentPlayingSong || currentPlayingVideo ? 
+        <FloatingMusicPlayer
+          song={currentPlayingSong}
+          video={currentPlayingVideo}
+          currentVolume={currentVolume}
+          progress={progress}
+          handleSongVolume={handleSongVolume}
+        />  
+       : (<></>)}
+        {success ? (
+          <div onClick={() => setSuccess(false)}>
+            <SuccessMessage successMessage={message} />
+          </div>
         ) : (
           <></>
         )}
-        <MainContainer>
-          <HiddenYouTubePlayer>
-            <ReactPlayer
-              url={currentPlayingSong.file}
-              playing={isPlaying}
-              volume={currentVolume}
-              pip={true}
-              onProgress={handleProgress}
-            />
-            <ReactAudioPlayer src={currentPlayingSong.file} autoPlay controls />
-          </HiddenYouTubePlayer>
-          <HeaderWrapper>
-            <Typography variant="h5"> Mostrando todas as músicas </Typography>
-            <Button
-              variant="contained"
-              size="large"
-              style={{
-                backgroundColor: "#116dee",
-                color: "#FFF",
-                fontWeight: "bold",
-                height: "100%",
-                width: "25%",
-                borderRadius: 30,
-              }}
-              onClick={() => handleFilterModal()}
-            >
-              Filtrar
-            </Button>
-          </HeaderWrapper>
-          {songs.map((song) => {
-            return (
-              <>
-                <MusicHeader>
-                  <MusicTitle>{song.title}</MusicTitle>
-                  <MusicArtist>{song.author}</MusicArtist>
-                  <ViewMore onClick={() => handleSongModal(song, "normal")}>
-                    Ver mais
-                  </ViewMore>
-                  <VolumeDownIcon onClick={() => handleSongVolume("down")} />
-                  <VolumeUpIcon onClick={() => handleSongVolume("up")} />
-                  {song.title === currentPlayingSong.title ? (
-                    <PauseIcon
-                      onClick={() => handleMusicPlayer(song, "normal")}
-                    />
-                  ) : (
-                    <PlayIcon
-                      onClick={() => handleMusicPlayer(song, "normal")}
-                    />
-                  )}
-                </MusicHeader>
-              </>
-            );
-          })}
-          <SongModal
-            open={songModal}
-            onClose={() => setSongModal(false)}
-            song={selectedSong}
-          />
-          <FilterModal
-            open={filterModal}
-            onClose={() => setFilterModal(false)}
-            setURLQuery={setURLQuery}
-          />
-        </MainContainer>
-      </>
+        {error && (
+          <div onClick={() => setError(false)}>
+            <ErrorMessage errorMessage={message} />
+          </div>
+        )}
+
+        {isLoading ? (
+          <LoadingScreen>
+            <CircularProgress />
+          </LoadingScreen>
+        ) : (
+          <MainContainer>
+            <HiddenYouTubePlayer>
+              <ReactPlayer
+                url={currentPlayingVideo.file}
+                playing={isPlaying}
+                volume={currentVolume}
+                pip={true}
+                onProgress={handleProgress}
+              />
+              {/* <ReactAudioPlayer
+                src={currentPlayingSong.file}
+                autoPlay
+                controls
+              /> */}
+            </HiddenYouTubePlayer>
+            <HeaderWrapper>
+              <Typography variant="h5">{headerMessage}</Typography>
+              <Button
+                variant="contained"
+                size="large"
+                style={{
+                  backgroundColor: "#116dee",
+                  color: "#FFF",
+                  fontWeight: "bold",
+                  height: "100%",
+                  width: "25%",
+                  borderRadius: 30,
+                }}
+                onClick={() => handleFilterModal()}
+              >
+                Filtrar
+              </Button>
+            </HeaderWrapper>
+            {songs.map((song) => {
+              return (
+                <>
+                  <MusicHeader>
+                    <MusicTitle>{song.title}</MusicTitle>
+                    <MusicArtist>{song.author}</MusicArtist>
+                    <ViewMore
+                      onClick={() =>
+                        handleSongModal(song, "normal") && selectedSong(song)
+                      }
+                    >
+                      Ver mais
+                    </ViewMore>
+                    <IconsWrapper>
+                      {!isPlaying && song !== currentPlayingSong && (
+                        <PlayIcon
+                          onClick={() => handleMusicPlayer(song, "normal")}
+                        />
+                      )}
+                      {isPlaying && song.title === currentPausedSong && (
+                        <PauseIcon
+                          onClick={() => handleMusicPlayer(song, "normal")}
+                        />
+                      )}
+                      {isPlaying && song.title !== currentPausedSong && (
+                        <PlayIcon
+                          onClick={() => handleMusicPlayer(song, "normal")}
+                        />
+                      )}
+                      {song.added_by === userInfo.id && (
+                        <DeleteIcon onClick={() => deleteSongById(song)} />
+                      )}
+                    </IconsWrapper>
+                  </MusicHeader>
+                </>
+              );
+            })}
+          </MainContainer>
+        )}
+        <SongModal
+          open={songModal}
+          onClose={() => setSongModal(false)}
+          song={selectedSong}
+          songs={songs}
+          playlists={playlists}
+          token={token}
+        />
+        <FilterModal
+          open={filterModal}
+          onClose={() => setFilterModal(false)}
+          setURLQuery={setURLQuery}
+        />
+      </Main>
     );
 }
 

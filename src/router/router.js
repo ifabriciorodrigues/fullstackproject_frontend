@@ -7,6 +7,7 @@ import SignUpPage from "../components/SignUpPage"
 import LoginPage from "../components/LoginPage";
 import RegisterSongPage from "../components/RegisterSongPage";
 import PlaylistPage from "../components/PlaylistPage";
+import PlaylistDetailsPage from "../components/PlaylistDetailsPage";
 
 const Router = () => {
     return (
@@ -26,6 +27,9 @@ const Router = () => {
           </Route>
           <Route exact path="/playlists/">
             <PlaylistPage />
+          </Route>
+          <Route exact path="/playlists/:id">
+            <PlaylistDetailsPage />
           </Route>
           <Route path="*">
             <h1>Oops! Página não encontrada. (404)</h1>

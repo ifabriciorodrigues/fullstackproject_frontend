@@ -4,9 +4,13 @@ import NewPlaylistModal from "./NewPlaylistModal"
 import FloatingMusicPlayer from "./FloatingMusicPlayer";
 import HomeNavBar from "../HomeNavBar";
 
-import { useHistory } from "react-router-dom"
+import { useHistory, useParams } from "react-router-dom"
 import Typography from "@material-ui/core/Typography";
 import Button from "@material-ui/core/Button";
+
+import PlayIcon from "@material-ui/icons/PlayArrow";
+import PauseIcon from "@material-ui/icons/Pause";
+import DeleteIcon from "@material-ui/icons/Delete";
 
 import axios from "axios";
 import styled from "styled-components";
@@ -14,8 +18,9 @@ import styled from "styled-components";
 import ReactPlayer from "react-player";
 import ReactAudioPlayer from "react-audio-player";
 
-const MainContainer = styled.div`
-  width: 100%;
+export const Main = styled.div``;
+
+export const MainContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -27,17 +32,28 @@ const MainContainer = styled.div`
   }
 
   @media (min-width: 768px) {
-    max-width: 768px;
   }
 
   @media (min-width: 1024px) {
+    min-height: 100%;
     max-width: 100%;
     height: 100%;
     width: 100%;
   }
 `;
 
-const HeaderWrapper = styled.div`
+export const LoadingScreen = styled.div`
+  width: 100%;
+  height: 100%;
+  padding-bottom: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background-color: #f2f7fd;
+`;
+
+export const HeaderWrapper = styled.div`
   margin-top: 24px;
   margin-bottom: 24px;
   width: 50%;
@@ -54,7 +70,7 @@ const HeaderWrapper = styled.div`
   }
 `;
 
-const MusicHeader = styled.div`
+export const MusicHeader = styled.div`
   background-color: #fff;
   margin-bottom: 16px;
   width: 50%;
@@ -75,10 +91,6 @@ const MusicHeader = styled.div`
     width: 90%;
   }
 
-  @media (min-width: 411px) {
-    font-size: 1em;
-  }
-
   @media (min-width: 768px) {
     font-size: 1.25em;
   }
@@ -89,27 +101,25 @@ const MusicHeader = styled.div`
   }
 `;
 
-const PlaylistTitle = styled.p`
-  color: #116dee;
-  font-size: 1.5rem;
-  width: 25%;
-
-  @media (min-width: 320px) {
-    font-size: 1.25rem;
-  }
-
-  @media (min-width: 768px) {
-    font-size: 1.75rem;
-  }
+export const HiddenYouTubePlayer = styled.div`
+  display: none;
+  width: 0;
+  height: 0;
 `;
 
-const ViewMore = styled.p`
-  width: 25%;
+export const MusicTitle = styled.p`
+  width: 30%;
+`;
+
+export const ViewMore = styled.p`
+  width: 20%;
   text-decoration: underline;
+
 `;
 
-const PlaylistSubtitle = styled.p`
-  width: 45%;
+export const MusicArtist = styled.p`
+  width: 30%;
+
 `;
 
 export const IconsWrapper = styled.div`
@@ -121,20 +131,15 @@ export const IconsWrapper = styled.div`
     width: 15%;
   }
 
-  @media (min-width: 768px) {
-    width: 5%;
-  }
 
   @media (min-width: 1024px) {
     width: 10%;
   }
-`
-
+`;
 const baseUrl = "http://ec2-34-204-93-195.compute-1.amazonaws.com:3000";
 
 const PlaylistsPage = () => {
-  const [songs, setSongs] = useState([]);
-  const [playlists, setPlaylists] = useState([])
+  const [songs, setSongs] = useState([])
   const [token, setToken] = useState(null);
   const [songModal, setSongModal] = useState(false);
   const [renderedList, setRenderedList] = useState(false);
@@ -147,10 +152,13 @@ const PlaylistsPage = () => {
   const [progress, setProgress] = useState(0);
   const [currentPausedSong, setCurrentPausedSong] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
-
+    const [success, setSuccess] = useState(false);
+    const [error, setError] = useState(false);
+    const [message, setMessage] = useState("");
   const [orderBy, setOrderBy] = useState("");
   const [musicGenre, setMusicGenre] = useState("");
-
+  const [userInfo, setUserInfo] = useState("");
+  
   const history = useHistory();
   useEffect(() => {
     const token = window.localStorage.getItem("token");
@@ -159,16 +167,31 @@ const PlaylistsPage = () => {
     if (!token) {
       history.push("/login");
     } else {
-      getPlaylists();
+      getUserInfo();
+      getPlaylistDetails();
     }
-  }, [token, playlists]);
+  }, [token, songs]);
 
-  const axiosConfig = {
-    headers: {
-      auth: token,
-    },
+   const axiosConfig = {
+     headers: {
+       auth: token,
+     },
+   };
+
+
+
+  const getUserInfo = async () => {
+    try {
+      const response = await axios.get(`${baseUrl}/user/get`, axiosConfig);
+      setUserInfo(response.data.user);
+    } catch (err) {
+      console.log(err);
+    }
   };
 
+
+  const params = useParams();
+  const playlistId = params.id;
 
   const handleSongModal = (song) => {
     setSongModal(true);
@@ -220,13 +243,12 @@ const PlaylistsPage = () => {
     }
   };
 
-  const getPlaylists = async () => {
+  const getPlaylistDetails = async () => {
     try {
       const response = await axios.get(
-        `${baseUrl}/playlist/`, axiosConfig
+        `${baseUrl}/playlist/${playlistId}`
       );
-      console.log(response)
-      setPlaylists(response.data.playlists);
+      setSongs(response.data.PlaylistSongs);
     } catch (err) {
       console.log(err.response.data);
     }
@@ -238,7 +260,7 @@ const PlaylistsPage = () => {
   };
 
   const goToPlaylistDetails = (id) => {
-    history.push(`/playlists/${id}`)
+    history.push("")
   }
 
   const setURLQuery = (genre, order) => {
@@ -250,15 +272,42 @@ const PlaylistsPage = () => {
   };
 
   const refreshPage = () => {
-      getPlaylists();
+      getPlaylistDetails();
   }
+
+  const deleteSongById = async (song) => {
+    if (
+      window.confirm(
+        `Are you sure you want to delete the song: '${song.title}'?`
+      )
+    ) {
+      try {
+        const response = await axios.delete(
+          `${baseUrl}/music/delete/${song.id}`,
+          axiosConfig
+        );
+        setSuccess(true);
+        setMessage(`The song '${song.title}' was deleted successfully!`);
+        setTimeout(() => {
+          setSuccess(false);
+        }, 5000);
+      } catch (err) {
+        setError(true);
+        setMessage(
+          `Failure upon deleting the song '${song.title}'. Try again.`
+        );
+        console.log(err);
+      }
+    }
+  };
+
 
   return (
     <>
       <HomeNavBar />
       <MainContainer>
         <HeaderWrapper>
-          <Typography variant="h5"> Mostrando todas as playlists </Typography>
+          <Typography variant="h5"> Mostrando todas as músicas </Typography>
           <Button
             variant="contained"
             size="large"
@@ -272,7 +321,7 @@ const PlaylistsPage = () => {
             }}
             onClick={() => handleNewPlaylistModal()}
           >
-            Criar nova playlist
+            Adicionar músicas
           </Button>
           <Button
             variant="contained"
@@ -290,15 +339,32 @@ const PlaylistsPage = () => {
             Filtrar
           </Button>
         </HeaderWrapper>
-        {playlists.map((playlist) => {
+        {songs.length === 0 && <h1>Esta playlist não contém músicas =(</h1>}
+        {songs.map((song) => {
           return (
             <>
               <MusicHeader>
-                <PlaylistTitle>{playlist.title}</PlaylistTitle>
-                <PlaylistSubtitle>{playlist.subtitle}</PlaylistSubtitle>
-                <ViewMore onClick={() => goToPlaylistDetails(playlist.id)}>
-                  Ir para músicas da playlist
+                <MusicTitle>{song.title}</MusicTitle>
+                <MusicArtist>{song.author}</MusicArtist>
+                <ViewMore onClick={() => handleSongModal(song, "normal")}>
+                  Ver mais
                 </ViewMore>
+                <IconsWrapper>
+                {song.added_by === userInfo.id && (
+                  <DeleteIcon onClick={() => deleteSongById(song)} />
+                )}
+                {!isPlaying && song !== currentPlayingSong && (
+                  <PlayIcon onClick={() => handleMusicPlayer(song, "normal")} />
+                )}
+                {isPlaying && song.title === currentPausedSong && (
+                  <PauseIcon
+                    onClick={() => handleMusicPlayer(song, "normal")}
+                  />
+                )}
+                {isPlaying && song.title !== currentPausedSong && (
+                  <PlayIcon onClick={() => handleMusicPlayer(song, "normal")} />
+                )}
+                </IconsWrapper>
               </MusicHeader>
             </>
           );

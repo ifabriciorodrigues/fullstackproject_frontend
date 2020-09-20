@@ -2,15 +2,15 @@ import React from "react";
 import styled from "styled-components"
 
 const MainHeader = styled.div`
-background-color: #34eb6b;
-font-weight: bold;
+  background-color: #eb3434;
+  font-weight: bold;
   display: flex;
   width: 100%;
   height: 48px;
   align-items: center;
   justify-content: center;
   margin: 0;
-  box-shadow: 0 0 2rem 0 rgba(0,0,0,0.3);
+  box-shadow: 0 0 2rem 0 rgba(0, 0, 0, 0.3);
 `;
 
 const TextContainer = styled.div`
@@ -24,11 +24,11 @@ const TextWrapper = styled.div`
 `
 
 const PopupMessage = (props) => {
-     const { successMessage } = props;
+    const { errorMessage } = props;
 
     return (
       <MainHeader>
-        <TextContainer><TextWrapper>{successMessage}</TextWrapper></TextContainer>
+        <TextContainer><TextWrapper>{errorMessage}</TextWrapper></TextContainer>
       </MainHeader>
     );
 }
