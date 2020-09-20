@@ -1,40 +1,26 @@
-import React from "react";
-import styled from "styled-components"
+import React, {useState} from "react";
 import { useHistory } from "react-router-dom";
+
+import Menu from "@material-ui/core/Menu";
+import MenuItem from "@material-ui/core/MenuItem";
 
 import AccountIcon from "@material-ui/icons/AccountCircle"
 import PlaylistIcon from "@material-ui/icons/QueueMusic"
 import AddSong from "@material-ui/icons/LibraryAdd"
 
-const MainHeader = styled.div`
-  display: flex;
-  width: 100%;
-  height: 48px;
-  align-items: center;
-  justify-content: space-around;
-  margin: 0;
-  box-shadow: 0 0 2rem 0 rgba(0,0,0,0.3);
-`;
-
-const LogoContainer = styled.div`
-  display: flex;
-`;
-
-const LogoWrapper = styled.div`
-  cursor: pointer;
-`
-
-const IconsWrapper = styled.div`
-  width: 8%;
-  height: 100%;
-  display: flex;
-  justify-content: space-evenly;
-  align-items: center;
-  cursor: pointer;
-`
+import { MainHeader, LogoContainer, LogoWrapper, IconsWrapper, DropdownMenuContainer } from "./styles"
 
 const NavBar = () => {
+    const [anchorEl, setAnchorEl] = useState(null);
     const history = useHistory();
+
+    const handleClick = (event) => {
+      setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+      setAnchorEl(null);
+    };
 
     const goToRegisterMusicPage = () => {
         history.push("/register/song")
@@ -44,9 +30,13 @@ const NavBar = () => {
         history.push("/playlists")
     }
 
-
     const goToHomePage = () => {
       history.push("/");
+    };
+
+    const goToLoginPage = () => {
+      window.localStorage.removeItem("token");
+      history.push("/login");
     };
     
     return (
@@ -62,7 +52,23 @@ const NavBar = () => {
             <PlaylistIcon onClick={goToPlaylistPage} />
           </>
           <>
-            <AccountIcon />
+            <DropdownMenuContainer>
+                <AccountIcon
+                  aria-controls="simple-menu"
+                  aria-haspopup="true"
+                  onClick={handleClick}
+                />
+              <Menu
+                id="simple-menu"
+                anchorEl={anchorEl}
+                keepMounted
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+              >
+                <MenuItem onClick={handleClose}>My account</MenuItem>
+                <MenuItem onClick={(handleClose, goToLoginPage)}>Logout</MenuItem>
+              </Menu>
+            </DropdownMenuContainer>
           </>{" "}
         </IconsWrapper>
       </MainHeader>
