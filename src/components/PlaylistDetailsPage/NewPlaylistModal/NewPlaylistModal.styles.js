@@ -26,7 +26,7 @@ export const ModalTitle = styled.h4`
 `;
 
 export const ModalElement = styled.div`
-width: 100%;
+  width: 100%;
   font-size: 1rem;
   font-weight: normal;
   font-stretch: normal;
@@ -64,4 +64,4 @@ export const OrderTypeContainer = styled.div`
 export const OrderTypeElement = styled.div`
   display: flex;
   width: 30%;
-`
+`;

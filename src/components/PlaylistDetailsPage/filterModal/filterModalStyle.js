@@ -25,7 +25,7 @@ export const ModalTitle = styled.h4`
   letter-spacing: -0.39px;
 `;
 
-export const ModalElement = styled.h6`
+export const ModalElement = styled.div`
 width: 100%;
   font-size: 1rem;
   font-weight: normal;
@@ -42,6 +42,17 @@ export const ModalButton = styled.div`
   text-align: right;
   margin-top: 1.75rem;
   /* font-family: Roboto; */
+  font-size: 2rem;
+  font-weight: normal;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: normal;
+  letter-spacing: -0.39px;
+`;
+
+export const OrderTypeContainer = styled.div`
+  display: flex;
+  width: 100%;
   font-size: 1rem;
   font-weight: normal;
   font-stretch: normal;
@@ -49,3 +60,8 @@ export const ModalButton = styled.div`
   line-height: normal;
   letter-spacing: -0.39px;
 `;
+
+export const OrderTypeElement = styled.div`
+  display: flex;
+  width: 30%;
+`

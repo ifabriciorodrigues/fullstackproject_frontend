@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
-import FilterModal from "./FilterModal";
-import NewPlaylistModal from "./NewPlaylistModal"
+import React, { useState, useEffect, useRef } from "react";
+import FilterModal from "./filterModal";
+import NewPlaylistModal from "./NewPlaylistModal/NewPlaylistModal"
 import FloatingMusicPlayer from "./FloatingMusicPlayer";
 import HomeNavBar from "../HomeNavBar";
 
@@ -140,7 +140,10 @@ const baseUrl = "http://ec2-34-204-93-195.compute-1.amazonaws.com:3000";
 
 const PlaylistsPage = () => {
   const [songs, setSongs] = useState([])
+  const [refresh, setRefresh] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [token, setToken] = useState(null);
+  const [tokenStatus, setTokenStatus] = useState("")
   const [songModal, setSongModal] = useState(false);
   const [renderedList, setRenderedList] = useState(false);
   const [filterModal, setFilterModal] = useState(false);
@@ -152,13 +155,21 @@ const PlaylistsPage = () => {
   const [progress, setProgress] = useState(0);
   const [currentPausedSong, setCurrentPausedSong] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
-    const [success, setSuccess] = useState(false);
-    const [error, setError] = useState(false);
-    const [message, setMessage] = useState("");
-  const [orderBy, setOrderBy] = useState("");
-  const [musicGenre, setMusicGenre] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState(false);
+  const [message, setMessage] = useState("");
   const [userInfo, setUserInfo] = useState("");
-  
+  const [orderBy, setOrderBy] = useState("");
+  const [orderType, setOrderType] = useState("");
+  const [title, setTitle] = useState("");
+  const [genre, setGenre] = useState("");
+  const [userSongs, setUserSongs] = useState("")
+  const [headerMessage, setHeaderMessage] = useState("Todas as músicas em ordem ascendente")
+  const [playlists, setPlaylists] = useState([]);
+  const scrollToTopRef = useRef()
+  const scrollToRef = (ref) => window.scrollTo(0, ref.current.offsetTop);
+  const executeScroll = () => scrollToRef(scrollToTopRef); 
+
   const history = useHistory();
   useEffect(() => {
     const token = window.localStorage.getItem("token");
@@ -168,24 +179,30 @@ const PlaylistsPage = () => {
       history.push("/login");
     } else {
       getUserInfo();
+    }
+
+    if (refresh) {
       getPlaylistDetails();
     }
-  }, [token, songs]);
+    if (tokenStatus === "jwt expired" || tokenStatus === "invalid token") {
+      alert("Sua sessão expirou! Faça login novamente.");
+      window.localStorage.removeItem("token");
+      history.push("/login");
+    }
+  }, [token, songs, tokenStatus, refresh]);
 
-   const axiosConfig = {
-     headers: {
-       auth: token,
-     },
-   };
-
-
+    const axiosConfig = {
+      headers: {
+        auth: token,
+      },
+    };
 
   const getUserInfo = async () => {
     try {
       const response = await axios.get(`${baseUrl}/user/get`, axiosConfig);
       setUserInfo(response.data.user);
     } catch (err) {
-      console.log(err);
+      setTokenStatus(err.response.data.error);
     }
   };
 
@@ -246,11 +263,12 @@ const PlaylistsPage = () => {
   const getPlaylistDetails = async () => {
     try {
       const response = await axios.get(
-        `${baseUrl}/playlist/${playlistId}`
+        `${baseUrl}/playlist/${playlistId}/?title=${title}&genre=${genre}&orderType=${orderType}&orderBy=${orderBy}`, axiosConfig
       );
-      setSongs(response.data.PlaylistSongs);
+      setSongs(response.data.songs);
+      setRefresh(false)
     } catch (err) {
-      console.log(err.response.data);
+      console.log(err);
     }
   };
 
@@ -263,38 +281,87 @@ const PlaylistsPage = () => {
     history.push("")
   }
 
-  const setURLQuery = (genre, order) => {
-    setOrderBy(order);
-    setMusicGenre(genre);
-    console.log("MUDEI");
-    console.log("NOVO GÊNERO", genre);
-    console.log("NOVA ORDEM", order);
-  };
+  const setURLQuery = (title, genre, order, userSongs, orderTitle, orderGenre, orderDate) => {
+    setOrderType(order);
+    setTitle(title);
+    setGenre(genre);
+
+    console.log("recebi")
+
+    if (userSongs) {
+      setUserSongs("yes");
+      setHeaderMessage("Suas músicas em ordem ascendente");
+    }
+
+    if (orderTitle) {
+      setOrderBy("title");
+    }
+
+    if (orderGenre) {
+      setOrderBy("genre");
+    }
+
+    if (orderDate) {
+      setOrderBy("date");
+    }
+
+    if (!userSongs) {
+      setUserSongs("");
+    }
+    if (userSongs && order === "DESC") {
+      setHeaderMessage("Suas músicas em ordem decrescente");
+    }
+    if (!userSongs && order === "ASC") {
+      setHeaderMessage("Todas as músicas em ordem ascendente");
+    }
+    if (!userSongs && order === "DESC") {
+      setHeaderMessage("Todas as músicas em ordem decrescente");
+    }
+    if (!userSongs && genre.length > 1) {
+      setHeaderMessage(`Todas as músicas por gênero '${genre}' em ordem ascendente`)
+    }
+    if (userSongs && genre.length > 1) {
+      setHeaderMessage(`Suas músicas por gênero '${genre}' em ordem ascendente`)
+    }
+
+    if (userSongs && genre.length > 1 && title && order === "ASC") {
+      setHeaderMessage(`Suas músicas por título '${title}', gênero '${genre}' em ordem ascendente`)
+    }
+
+    if (userSongs && genre.length > 1 && title && order === "DESC") {
+      setHeaderMessage(
+        `Suas músicas por título '${title}', gênero '${genre}' em ordem descendente`
+      );
+    }
+
+    setRefresh(true);
+    setIsLoading(true)
+    setTimeout(() => {
+      setIsLoading(false)
+    }, 1500)
+  }
 
   const refreshPage = () => {
       getPlaylistDetails();
   }
 
-  const deleteSongById = async (song) => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete the song: '${song.title}'?`
-      )
-    ) {
+  const deletePlaylistSongById = async (song) => {
+    if (window.confirm(`Você tem certeza que deseja deletar a música: '${song.title}' da playlist?`)) {
       try {
-        const response = await axios.delete(
-          `${baseUrl}/music/delete/${song.id}`,
+        
+          await axios.delete(
+          `${baseUrl}/playlist/delete/song/${song.playlistId}/${playlistId}`,
           axiosConfig
         );
         setSuccess(true);
-        setMessage(`The song '${song.title}' was deleted successfully!`);
+        setMessage(`A música: '${song.title}' foi deletada com sucesso`);
         setTimeout(() => {
           setSuccess(false);
         }, 5000);
       } catch (err) {
         setError(true);
         setMessage(
-          `Failure upon deleting the song '${song.title}'. Try again.`
+          `Falha ao deletar a música: '${song.title}'. Tente novamente.`
         );
         console.log(err);
       }
@@ -350,20 +417,22 @@ const PlaylistsPage = () => {
                   Ver mais
                 </ViewMore>
                 <IconsWrapper>
-                {song.added_by === userInfo.id && (
-                  <DeleteIcon onClick={() => deleteSongById(song)} />
-                )}
-                {!isPlaying && song !== currentPlayingSong && (
-                  <PlayIcon onClick={() => handleMusicPlayer(song, "normal")} />
-                )}
-                {isPlaying && song.title === currentPausedSong && (
-                  <PauseIcon
-                    onClick={() => handleMusicPlayer(song, "normal")}
-                  />
-                )}
-                {isPlaying && song.title !== currentPausedSong && (
-                  <PlayIcon onClick={() => handleMusicPlayer(song, "normal")} />
-                )}
+                    <DeleteIcon onClick={() => deletePlaylistSongById(song)} />
+                  {!isPlaying && song !== currentPlayingSong && (
+                    <PlayIcon
+                      onClick={() => handleMusicPlayer(song, "normal")}
+                    />
+                  )}
+                  {isPlaying && song.title === currentPausedSong && (
+                    <PauseIcon
+                      onClick={() => handleMusicPlayer(song, "normal")}
+                    />
+                  )}
+                  {isPlaying && song.title !== currentPausedSong && (
+                    <PlayIcon
+                      onClick={() => handleMusicPlayer(song, "normal")}
+                    />
+                  )}
                 </IconsWrapper>
               </MusicHeader>
             </>

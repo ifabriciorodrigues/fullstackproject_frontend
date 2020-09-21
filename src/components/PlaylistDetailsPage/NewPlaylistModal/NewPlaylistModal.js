@@ -3,15 +3,13 @@ import axios from "axios";
 
 import Typography from "@material-ui/core/Typography";
 import TextField from "@material-ui/core/TextField";
-import FormControlLabel from "@material-ui/core/FormControlLabel";
-import Checkbox from "@material-ui/core/Checkbox";
 
 import {
   ModalBody,
   ModalButton,
   ModalElement,
   ModalTitle,
-} from "./filterModalStyle";
+} from "./NewPlaylistModal.styles";
 
 import Modal from "@material-ui/core/Modal";
 
@@ -19,7 +17,6 @@ const baseUrl = "http://ec2-34-204-93-195.compute-1.amazonaws.com:3000";
 
 const NewPlaylistModal = (props) => {
   const { open, onClose, refreshPage } = props;
-
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [url, setUrl] = useState("");

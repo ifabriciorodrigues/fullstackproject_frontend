@@ -65,7 +65,7 @@ const NavBar = () => {
                 open={Boolean(anchorEl)}
                 onClose={handleClose}
               >
-                <MenuItem onClick={handleClose}>My account</MenuItem>
+                <MenuItem onClick={handleClose}>Minha conta</MenuItem>
                 <MenuItem onClick={(handleClose, goToLoginPage)}>Logout</MenuItem>
               </Menu>
             </DropdownMenuContainer>

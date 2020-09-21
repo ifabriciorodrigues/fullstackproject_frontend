@@ -8,6 +8,8 @@ import { useHistory } from "react-router-dom"
 import Typography from "@material-ui/core/Typography";
 import Button from "@material-ui/core/Button";
 
+import DeleteIcon from "@material-ui/icons/Delete";
+
 import axios from "axios";
 import styled from "styled-components";
 
@@ -136,6 +138,7 @@ const PlaylistsPage = () => {
   const [songs, setSongs] = useState([]);
   const [playlists, setPlaylists] = useState([])
   const [token, setToken] = useState(null);
+  const [tokenStatus, setTokenStatus] = useState("")
   const [songModal, setSongModal] = useState(false);
   const [renderedList, setRenderedList] = useState(false);
   const [filterModal, setFilterModal] = useState(false);
@@ -147,9 +150,12 @@ const PlaylistsPage = () => {
   const [progress, setProgress] = useState(0);
   const [currentPausedSong, setCurrentPausedSong] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
-
+  const [userInfo, setUserInfo] = useState([])
   const [orderBy, setOrderBy] = useState("");
   const [musicGenre, setMusicGenre] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState(false);
+  const [message, setMessage] = useState("");
 
   const history = useHistory();
   useEffect(() => {
@@ -160,13 +166,35 @@ const PlaylistsPage = () => {
       history.push("/login");
     } else {
       getPlaylists();
+      getUserInfo();
     }
-  }, [token, playlists]);
+    if (tokenStatus === "jwt expired" || tokenStatus === "invalid token") {
+      alert("Sua sessão expirou! Faça login novamente.");
+      window.localStorage.removeItem("token");
+      history.push("/login");
+    }
+  }, [token, playlists, tokenStatus]);
 
   const axiosConfig = {
     headers: {
       auth: token,
     },
+  };
+
+  const getUserInfo = async () => {
+    const axiosConfig = {
+      headers: {
+        auth: token,
+      },
+    };
+
+    try {
+      const response = await axios.get(`${baseUrl}/user/get`, axiosConfig);
+      setUserInfo(response.data.user);
+    } catch (err) {
+      console.log(err.response.data.error);
+      setTokenStatus(err.response.data.error);
+    }
   };
 
 
@@ -225,12 +253,35 @@ const PlaylistsPage = () => {
       const response = await axios.get(
         `${baseUrl}/playlist/`, axiosConfig
       );
-      console.log(response)
       setPlaylists(response.data.playlists);
     } catch (err) {
-      console.log(err.response.data);
+      console.log(err);
     }
   };
+
+  
+    const deletePlaylistById = async (playlist) => {
+      if (
+        window.confirm(
+          `Você tem certeza que deseja deletar a playlist: '${playlist.title}'?`
+        )
+      ) {
+        try {
+          await axios.delete(`${baseUrl}/playlist/delete/${playlist.id}`, axiosConfig);
+          setSuccess(true);
+          setMessage(`A playlist: '${playlist.title}' foi deletada com sucesso!`);
+          setTimeout(() => {
+            setSuccess(false);
+          }, 5000);
+        } catch (err) {
+          setError(true);
+          setMessage(
+            `Falha ao deletar a playlist: '${playlist.title}'. Tente novamente.`
+          );
+          console.log(err);
+        }
+      }
+    };
 
   const handleProgress = (progress) => {
     console.log("onProgress", progress);
@@ -274,21 +325,6 @@ const PlaylistsPage = () => {
           >
             Criar nova playlist
           </Button>
-          <Button
-            variant="contained"
-            size="large"
-            style={{
-              backgroundColor: "#116dee",
-              color: "#FFF",
-              fontWeight: "bold",
-              height: "100%",
-              width: "25%",
-              borderRadius: 30,
-            }}
-            onClick={() => handleFilterModal()}
-          >
-            Filtrar
-          </Button>
         </HeaderWrapper>
         {playlists.map((playlist) => {
           return (
@@ -299,6 +335,9 @@ const PlaylistsPage = () => {
                 <ViewMore onClick={() => goToPlaylistDetails(playlist.id)}>
                   Ir para músicas da playlist
                 </ViewMore>
+                {playlist.creator_id === userInfo.id && (
+                  <DeleteIcon onClick={() => deletePlaylistById(playlist)} />
+                )}
               </MusicHeader>
             </>
           );
