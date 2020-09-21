@@ -6,7 +6,7 @@ import Waveform from "./Waveform";
 import { MainHeader, PlayerContainer, PlayerText, VideoContainer, TextWrapper, IconsContainer } from "./styles"
 
 const FloatingMusicPlayer = (props) => {
-  const { song, currentVolume, progress, handleSongVolume, video } = props;
+  const { song, songFile, currentVolume, progress, handleSongVolume, video } = props;
   const [readyToPlaySong, setReadyToPlaySong] = useState(false)
   const [readyToPlayVideo, setReadyToPlayVideo] = useState(false);
 
@@ -17,7 +17,8 @@ const FloatingMusicPlayer = (props) => {
 
   const proxyurl = "https://cors-anywhere.herokuapp.com/";
 
-  const url = proxyurl + song.file;
+  console.log(song)
+  const url = proxyurl + songFile;
 
   const displayedTime = (progress) => {
     let minutes = 0;
@@ -38,6 +39,7 @@ const FloatingMusicPlayer = (props) => {
       );
     }
   };
+  console.log(url)
 
   const handleNewVolume = (volume) => {
     if (currentVolume <= 0.9) {
