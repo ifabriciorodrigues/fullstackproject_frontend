@@ -19,13 +19,7 @@ Para mais detalhes sobre todos os endpoints disponíveis na API, visite o link: 
 
 ## Imagens
 
-<img src="https://imgur.com/ct1ZoLF" title="foto-pagina-login" width="500" height="500" />
-<img src="https://imgur.com/ReLbuxo" title="foto-pagina-signup" width="500" height="500" />
-<img src="https://imgur.com/tdmnYeY" title="foto-pagina-home" width="500" height="500" />
-<img src="https://imgur.com/Iy8pPh9" title="foto-pagina-home-escura" width="500" height="500" />
-<img src="https://imgur.com/FuuUTyC" title="foto-pagina-playlists-escura" width="500" height="500" />
-<img src="https://imgur.com/mlNYVR8" title="foto-pagina-detalhes-da-playlist-escura" width="500" height="500" />
-
+https://imgur.com/a/PPBfsv7
 
 ## Contribuição
 - Clone o repositório para a sua máquina local usando `https://github.com/ProgFabs/fullstackproject_backend.git`
