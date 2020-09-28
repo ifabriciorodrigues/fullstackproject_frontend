@@ -4,7 +4,8 @@ export const MainContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f2f7fd;
+  background-color: ${({ theme }) => theme.body};
+  color: ${({ theme }) => theme.text};
 
   @media (min-width: 320px) {
     height: 160vh;
@@ -25,7 +26,8 @@ export const MainContainer = styled.div`
 `;
 
 export const SignUpContainer = styled.div`
-  background-color: #fff;
+  background-color: ${({ theme }) => theme.form};
+  color: ${({ theme }) => theme.text};
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -52,6 +54,8 @@ export const SignUpContainer = styled.div`
 `;
 
 export const SignUpWrapper = styled.div`
+  background-color: ${({ theme }) => theme.form};
+  color: ${({ theme }) => theme.text};
   display: flex;
   flex-direction: column;
   justify-content: space-evenly;
@@ -67,7 +71,9 @@ export const SignUpWrapper = styled.div`
 `;
 
 export const LoginRouterContainer = styled.div`
-  background-color: #f2f7fd;
+  background-color: ${({ theme }) => theme.body};
+  color: ${({ theme }) => theme.text};
+
   width: 100%;
   display: flex;
   align-items: center;
@@ -89,6 +95,8 @@ export const LoginRouterContainer = styled.div`
 `;
 
 export const HeaderText = styled.h4`
+  background-color: ${({ theme }) => theme.body};
+  color: ${({ theme }) => theme.text};
   @media (min-width: 320px) {
     font-size: 1.5rem;
     height: 0;
@@ -105,6 +113,7 @@ export const HeaderText = styled.h4`
 `;
 
 export const InputContainer = styled.div`
+  color: ${({ theme }) => theme.text};
   display: flex;
   flex-direction: column;
 
@@ -115,4 +124,15 @@ export const InputContainer = styled.div`
   @media (min-width: 768px) {
     font-size: 1.5rem;
   }
+`;
+
+export const LoadingScreen = styled.div`
+  width: 99.2vw;
+  height: 100vh;
+  padding-bottom: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background-color: ${({ theme }) => theme.body};
 `;

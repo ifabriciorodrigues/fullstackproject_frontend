@@ -28,7 +28,6 @@ import {
 
 const baseUrl = "http://ec2-34-204-93-195.compute-1.amazonaws.com:3000";
 
-
 const SignUpPage = () => {
     const [email, setEmail] = useState("");
     const [name, setName] = useState("");
@@ -37,13 +36,9 @@ const SignUpPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const history = useHistory();
 
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword);
-  };
+    const handleClickShowPassword = () => { setShowPassword(!showPassword); }
 
-  const goToSignUpPage = () => {
-    history.push("/login")
-  }
+    const goToSignUpPage = () => { history.push("/login")}
 
     const handleSignUp = async (event) => {
       event.preventDefault();
@@ -62,7 +57,8 @@ const SignUpPage = () => {
         try {
           const response = await axios.post(
             `${baseUrl}/user/signup`,
-            body, headers
+            body,
+            headers
           );
           localStorage.setItem("token", response.data.token);
           history.push("/")
