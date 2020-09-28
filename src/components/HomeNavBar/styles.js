@@ -1,6 +1,8 @@
 import styled from "styled-components";
 
 export const MainHeader = styled.div`
+  background-color: ${({ theme }) => theme.navBar};
+  color: ${({ theme }) => theme.text};
   display: flex;
   width: 100%;
   height: 48px;
@@ -8,7 +10,6 @@ export const MainHeader = styled.div`
   justify-content: space-around;
   margin: 0;
   box-shadow: 0 0 2rem 0 rgba(0, 0, 0, 0.3);
-
   @media (min-width: 768px) {
     height: 64px;
   }
